@@ -19,6 +19,11 @@ run "Begin provisioning process..." \
     "while (! docker ps > /dev/null ); do sleep 0.5; done" \
     ${PROVISION_LOG}
 
+BASE_TEMPLATE=/opt/bootstrap/abc.json
+run "Updating BareMetal kernel parameters" \
+    "echo 'run API curl command here';cat $BASE_TEMPLATE" \
+    ${PROVISION_LOG}
+    
 PROVISIONER=$1
 
 # --- Get kernel parameters ---
@@ -244,6 +249,33 @@ if [ ! -z "${param_mirror}" ]; then
         export PKG_REPO_SEC_LIST="${PKG_REPO_SEC_LIST} multiverse"
     fi
 fi
+
+BM_KERNEL=$(sed -n '/kernel/,/value/p' $BASE_TEMPLATE | cut -d "\"" -f 4 | sed -e '/^ *$/d')
+echo BM_KERNEL=${BM_KERNEL}
+BM_OSVERSION=$(sed -n '/osversion/,/value/p' $BASE_TEMPLATE | cut -d "\"" -f 4 | sed -e '/^ *$/d' | awk 'NR==1')
+echo BM_OSVERSION=${BM_OSVERSION}
+BM_OSTYPE=$(sed -n '/ostype/,/value/p' $BASE_TEMPLATE | cut -d "\"" -f 4 | sed -e '/^ *$/d')
+echo BM_OSTYPE=${BM_OSTYPE}
+BM_OSDITRIBUTION=$(sed -n '/osdistribution/,/value/p' $BASE_TEMPLATE | cut -d "\"" -f 4 | sed -e '/^ *$/d')
+echo BM_OSDITRIBUTION=${BM_OSDITRIBUTION}
+BM_OSVERSIONTYPE=$(sed -n '/osversiontype/,/value/p' $BASE_TEMPLATE | cut -d "\"" -f 4 | sed -e '/^ *$/d')
+echo BM_OSVERSIONTYPE=${BM_OSVERSIONTYPE}
+BM_USERNAME=$(grep 'username' $BASE_TEMPLATE | cut -d "\"" -f 4)
+echo BM_USERNAME=${BM_USERNAME}
+BM_HOSTNAME=eschost-01-$(tr </dev/urandom -dc a-f0-9 | head -c10)
+echo BM_HOSTNAME=$BM_HOSTNAME
+BM_IMAGEUUID=$(grep 'uuid' $BASE_TEMPLATE | cut -d "\"" -f 4 | awk 'NR==2')
+echo BM_IMAGEUUID=$BM_IMAGEUUID
+
+touch /opt/bootstrap/output.txt
+echo ${BM_KERNEL} >> /opt/bootstrap/output.txt
+echo ${BM_OSVERSION} >> /opt/bootstrap/output.txt
+echo ${BM_OSTYPE} >> /opt/bootstrap/output.txt
+echo ${BM_OSDITRIBUTION} >> /opt/bootstrap/output.txt
+echo ${BM_OSVERSIONTYPE} >> /opt/bootstrap/output.txt
+echo ${BM_USERNAME} >> /opt/bootstrap/output.txt
+echo $BM_HOSTNAME >> /opt/bootstrap/output.txt
+echo $BM_IMAGEUUID >> /opt/bootstrap/output.txt
 
 # --- Get free memory
 export freemem=$(grep MemTotal /proc/meminfo | awk '{print $2}')
